@@ -1,16 +1,30 @@
 name: Cypress Tests
 
-on: 
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: push
 
 jobs:
+  install:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cypress install
+        uses: cypress-io/github-action@v6
+        with:
+          runTests: false
+          build: npm run build
+
+      - name: Save build folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          if-no-files-found: error
+          path: build
+
   cypress-run:
     runs-on: windows-latest
+    needs: install
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,13 +34,11 @@ jobs:
         with:
           node-version: '20.9.0'
 
-      - name: Cache Cypress binary
-        uses: actions/cache@v2
+      - name: Download the build folder
+        uses: actions/download-artifact@v4
         with:
-          path: C:\Users\runneradmin\AppData\Local\Cypress\Cache
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
+          name: build
+          path: build
 
       - name: Install dependencies
         run: npm install
